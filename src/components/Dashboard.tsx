@@ -38,7 +38,7 @@ function Dashboard({ onLogout }: DashboardProps) {
       {/* Main content container */}
       <div className="relative z-10 w-full max-w-2xl mx-auto">
         {/* Dashboard card */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 md:p-10">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8">
           {/* Heading */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
             Your Tasks
