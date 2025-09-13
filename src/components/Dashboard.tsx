@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, ArrowLeft } from 'lucide-react';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -26,6 +26,15 @@ function Dashboard({ onLogout }: DashboardProps) {
       {/* Animated gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-blue-200/10 to-transparent animate-pulse"></div>
       
+      {/* Back button */}
+      <button
+        onClick={onLogout}
+        className="absolute top-6 left-6 flex items-center gap-2 text-white/80 hover:text-white transition-colors duration-200"
+      >
+        <ArrowLeft size={20} />
+        <span className="text-sm font-medium">Back to Home</span>
+      </button>
+
       {/* Main content container */}
       <div className="relative z-10 w-full max-w-2xl mx-auto">
         {/* Dashboard card */}
