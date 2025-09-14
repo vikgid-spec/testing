@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, ArrowLeft, User, Plus, Trash2, Edit3, Check, X } from 'lucide-react';
+import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X } from 'lucide-react';
 import { authHelpers } from '../lib/supabase';
 import { taskHelpers, Task } from '../lib/tasks';
 
@@ -330,10 +330,9 @@ function Dashboard({ onLogout, user }: DashboardProps) {
           <button
             onClick={handleLogout}
             disabled={loading}
-            className="w-full py-4 bg-red-600 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+            className="w-full py-4 bg-red-600 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
-            <LogOut size={20} />
-            {loading ? 'Signing Out...' : 'Sign Out'}
+            {loading ? 'Signing out...' : 'Sign Out'}
           </button>
         </div>
       </div>
