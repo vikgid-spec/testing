@@ -43,12 +43,12 @@ function LoginPage({ onBack, onLoginSuccess, onGoToSignup }: LoginPageProps) {
       const { error } = await authHelpers.signInWithGoogle();
       
       if (error) {
-        setError(error.message);
+        setError(`Google sign-in error: ${error.message}`);
         setGoogleLoading(false);
       }
       // If successful, the redirect will handle the rest
     } catch (err) {
-      setError('An unexpected error occurred with Google sign-in');
+      setError(`Connection error: Please check your internet connection and try again. ${err instanceof Error ? err.message : 'Unknown error'}`);
       setGoogleLoading(false);
     }
   };
