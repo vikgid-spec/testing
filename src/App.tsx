@@ -92,7 +92,14 @@ function App() {
   }
 
   if (currentPage === 'dashboard') {
-    return <Dashboard onLogout={handleLogout} user={user} />;
+    // Only show dashboard if user is authenticated
+    if (user) {
+      return <Dashboard onLogout={handleLogout} user={user} />;
+    } else {
+      // If trying to access dashboard without being logged in, redirect to home
+      setCurrentPage('home');
+      return null;
+    }
   }
 
   return (

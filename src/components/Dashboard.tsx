@@ -5,10 +5,15 @@ import { taskHelpers, Task } from '../lib/tasks';
 
 interface DashboardProps {
   onLogout: () => void;
-  user: any;
+  user: any | null;
 }
 
 function Dashboard({ onLogout, user }: DashboardProps) {
+  // Don't render dashboard if user is not authenticated
+  if (!user) {
+    return null;
+  }
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
