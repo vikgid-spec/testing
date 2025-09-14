@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
-import { LogOut, ArrowLeft } from 'lucide-react';
+import { LogOut, ArrowLeft, User } from 'lucide-react';
+import { authHelpers } from '../lib/supabase';
 
 interface DashboardProps {
   onLogout: () => void;
+  user?: any;
 }
 
-function Dashboard({ onLogout }: DashboardProps) {
+function Dashboard({ onLogout, user }: DashboardProps) {
   const [tasks, setTasks] = useState([
     'Finish homework',
     'Call John',
     'Buy groceries'
   ]);
   const [newTask, setNewTask] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +24,17 @@ function Dashboard({ onLogout }: DashboardProps) {
     }
   };
 
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await authHelpers.signOut();
+      onLogout();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-white flex items-center justify-center px-4 py-8 font-['Open_Sans']">
       {/* Animated gradient overlay */}
@@ -39,6 +53,19 @@ function Dashboard({ onLogout }: DashboardProps) {
       <div className="relative z-10 w-full max-w-2xl mx-auto">
         {/* Dashboard card */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8">
+          {/* User info */}
+          {user && (
+            <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 rounded-lg">
+              <User size={24} className="text-blue-600" />
+              <div>
+                <p className="font-semibold text-gray-800">
+                  Welcome, {user.user_metadata?.full_name || user.email}!
+                </p>
+                <p className="text-sm text-gray-600">{user.email}</p>
+              </div>
+            </div>
+          )}
+          
           {/* Heading */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
             Your Tasks
@@ -85,11 +112,12 @@ function Dashboard({ onLogout }: DashboardProps) {
           
           {/* Logout button */}
           <button
-            onClick={onLogout}
-            className="w-full py-4 bg-gray-600 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out hover:bg-gray-700 flex items-center justify-center gap-2"
+            onClick={handleLogout}
+            disabled={loading}
+            className="w-full py-4 bg-gray-600 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out hover:bg-gray-700 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             <LogOut size={20} />
-            Logout
+            {loading ? 'Signing out...' : 'Logout'}
           </button>
         </div>
       </div>

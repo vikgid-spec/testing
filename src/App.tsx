@@ -1,10 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import Dashboard from './components/Dashboard';
+import { authHelpers } from './lib/supabase';
 
 function App() {
   const [currentPage, setCurrentPage] = React.useState<'home' | 'login' | 'signup' | 'dashboard'>('home');
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await authHelpers.getCurrentUser();
+        if (user) {
+          setUser(user);
+          setCurrentPage('dashboard');
+        }
+      } catch (error) {
+        console.error('Error checking user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+
+    // Listen for auth changes
+    const { data: { subscription } } = authHelpers.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
+        setCurrentPage('dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setCurrentPage('home');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleLogin = () => {
     console.log('Login clicked');
@@ -26,19 +61,36 @@ function App() {
   };
 
   const handleLogout = () => {
+    setUser(null);
     setCurrentPage('home');
   };
 
+  const handleLoginSuccess = () => {
+    // User state will be updated by the auth state change listener
+  };
+
+  const handleSignupSuccess = () => {
+    // User state will be updated by the auth state change listener
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-white flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
   if (currentPage === 'login') {
-    return <LoginPage onBack={handleBackToHome} />;
+    return <LoginPage onBack={handleBackToHome} onLoginSuccess={handleLoginSuccess} />;
   }
 
   if (currentPage === 'signup') {
-    return <SignupPage onBack={handleBackToHome} />;
+    return <SignupPage onBack={handleBackToHome} onSignupSuccess={handleSignupSuccess} />;
   }
 
   if (currentPage === 'dashboard') {
-    return <Dashboard onLogout={handleLogout} />;
+    return <Dashboard onLogout={handleLogout} user={user} />;
   }
 
   return (
