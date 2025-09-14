@@ -316,6 +316,17 @@ function Dashboard({ onLogout, user }: DashboardProps) {
           </div>
           
           {/* Logout button */}
+          <div className="mt-6 text-center">
+            <button
+              onClick={async () => {
+                await authHelpers.signOut();
+                onLogout();
+              }}
+              className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out hover:bg-red-700"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -61,8 +61,10 @@ function App() {
   };
 
   const handleLogout = () => {
-    setUser(null);
-    setCurrentPage('home');
+    authHelpers.signOut().then(() => {
+      setUser(null);
+      setCurrentPage('home');
+    });
   };
 
   const handleLoginSuccess = () => {
