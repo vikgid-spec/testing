@@ -5,7 +5,7 @@ import { taskHelpers, Task } from '../lib/tasks';
 
 interface DashboardProps {
   onLogout: () => void;
-  user?: any;
+  user: any;
 }
 
 function Dashboard({ onLogout, user }: DashboardProps) {
@@ -44,7 +44,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
 
     setLoading(true);
     try {
-      const { data, error } = await taskHelpers.createTask(newTask.trim(), newTaskPriority);
+      const { data, error } = await taskHelpers.createTask(newTask.trim(), user.id, newTaskPriority);
       if (error) {
         console.error('Error creating task:', error);
       } else if (data) {

@@ -22,12 +22,7 @@ export const taskHelpers = {
   },
 
   // Create a new task
-  createTask: async (title: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      return { data: null, error: { message: 'User not authenticated' } };
-    }
+  createTask: async (title: string, userId: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
 
     const { data, error } = await supabase
       .from('tasks')
@@ -36,7 +31,7 @@ export const taskHelpers = {
           title,
           priority,
           status: 'pending',
-          user_id: user.id
+          user_id: userId
         }
       ])
       .select()
