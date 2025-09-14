@@ -125,17 +125,6 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     setEditingTitle('');
   };
 
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      await authHelpers.signOut();
-      onLogout();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -327,13 +316,6 @@ function Dashboard({ onLogout, user }: DashboardProps) {
           </div>
           
           {/* Logout button */}
-          <button
-            onClick={handleLogout}
-            disabled={loading}
-            className="w-full py-4 bg-red-600 text-white font-semibold text-lg rounded-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 ease-in-out hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {loading ? 'Signing out...' : 'Sign Out'}
-          </button>
         </div>
       </div>
     </div>
