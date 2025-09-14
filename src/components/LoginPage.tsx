@@ -5,9 +5,10 @@ import { authHelpers } from '../lib/supabase';
 interface LoginPageProps {
   onBack: () => void;
   onLoginSuccess: () => void;
+  onGoToSignup: () => void;
 }
 
-function LoginPage({ onBack, onLoginSuccess }: LoginPageProps) {
+function LoginPage({ onBack, onLoginSuccess, onGoToSignup }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -164,7 +165,10 @@ function LoginPage({ onBack, onLoginSuccess }: LoginPageProps) {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
-              <button className="text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200">
+              <button 
+                onClick={onGoToSignup}
+                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200"
+              >
                 Sign up here
               </button>
             </p>
