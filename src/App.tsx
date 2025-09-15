@@ -1,160 +1,62 @@
-import React, { useEffect, useState } from 'react';
-import LoginPage from './components/LoginPage';
-import SignupPage from './components/SignupPage';
-import Dashboard from './components/Dashboard';
-import { authHelpers } from './lib/supabase';
+import { createClient } from '@supabase/supabase-js'
 
-function App() {
-  const [currentPage, setCurrentPage] = React.useState<'home' | 'login' | 'signup' | 'dashboard'>('home');
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      try {
-        const { data: { user } } = await authHelpers.getCurrentUser();
-        if (user) {
-          setUser(user);
-          setCurrentPage('dashboard');
-        }
-      } catch (error) {
-        console.error('Error checking user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-
-    // Listen for auth changes
-    const { data: { subscription } } = authHelpers.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setUser(session.user);
-        setCurrentPage('dashboard');
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setCurrentPage('home');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogin = () => {
-    console.log('Login clicked');
-    setCurrentPage('login');
-  };
-
-  const handleSignup = () => {
-    console.log('Signup clicked');
-    setCurrentPage('signup');
-  };
-
-  const handleDashboard = () => {
-    console.log('Go to Dashboard clicked');
-    setCurrentPage('dashboard');
-  };
-
-  const handleBackToHome = () => {
-    setCurrentPage('home');
-  };
-
-  const handleLogout = () => {
-    authHelpers.signOut().then(() => {
-      setUser(null);
-      setCurrentPage('home');
-    });
-  };
-
-  const handleLoginSuccess = () => {
-    // User state will be updated by the auth state change listener
-  };
-
-  const handleSignupSuccess = () => {
-    // User state will be updated by the auth state change listener
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-white flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (currentPage === 'login') {
-    return <LoginPage onBack={handleBackToHome} onLoginSuccess={handleLoginSuccess} onGoToSignup={handleSignup} />;
-  }
-
-  if (currentPage === 'signup') {
-    return <SignupPage onBack={handleBackToHome} onSignupSuccess={handleSignupSuccess} />;
-  }
-
-  if (currentPage === 'dashboard') {
-    // Only show dashboard if user is authenticated
-    if (user) {
-      return <Dashboard onLogout={handleLogout} user={user} />;
-    } else {
-      // If trying to access dashboard without being logged in, redirect to home
-      setCurrentPage('home');
-      return null;
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-white flex items-center justify-center px-4 py-8 font-['Open_Sans']">
-      {/* Animated gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-400/20 via-blue-200/10 to-transparent animate-pulse"></div>
-      
-      {/* Main content container */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto">
-        {/* Welcome heading */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
-          Welcome to My Task Manager
-        </h1>
-        
-        {/* Subtitle */}
-        <p className="text-lg sm:text-xl md:text-2xl text-white/90 mb-12 md:mb-16 font-light leading-relaxed drop-shadow-md max-w-2xl mx-auto">
-          Organize your tasks, boost your productivity, and achieve your goals with our intuitive task management solution.
-        </p>
-        
-        {/* Button container */}
-        <div className="flex flex-col sm:flex-row gap-6 md:gap-8 justify-center items-center">
-          {/* Login Button */}
-          <button
-            onClick={handleLogin}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-6 bg-white text-blue-600 font-semibold text-lg md:text-xl rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-in-out border-2 border-transparent hover:border-blue-200 min-w-[180px] md:min-w-[200px]"
-          >
-            Login
-          </button>
-          
-          {/* Signup Button */}
-          <button
-            onClick={handleSignup}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-6 bg-blue-600 text-white font-semibold text-lg md:text-xl rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-in-out border-2 border-blue-600 hover:bg-blue-700 hover:border-blue-700 min-w-[180px] md:min-w-[200px]"
-          >
-            Signup
-          </button>
-          
-          {/* Dashboard Button */}
-          <button
-            onClick={handleDashboard}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-6 bg-transparent text-white font-semibold text-lg md:text-xl rounded-full shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 ease-in-out border-2 border-white hover:bg-white hover:text-blue-600 min-w-[180px] md:min-w-[200px]"
-          >
-            Go to Dashboard
-          </button>
-        </div>
-        
-        {/* Decorative elements */}
-        <div className="mt-16 md:mt-20 flex justify-center space-x-4 opacity-70">
-          <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-          <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-        </div>
-      </div>
-    </div>
-  );
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables')
 }
 
-export default App;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Auth helper functions
+export const authHelpers = {
+  signUp: async (email: string, password: string, name: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+        }
+      }
+    })
+    return { data, error }
+  },
+
+  signIn: async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    return { data, error }
+  },
+
+  signOut: async () => {
+    const { error } = await supabase.auth.signOut()
+    return { error }
+  },
+
+  getCurrentUser: () => {
+    return supabase.auth.getUser()
+  },
+
+  onAuthStateChange: (callback: (event: string, session: any) => void) => {
+    return supabase.auth.onAuthStateChange(callback)
+  },
+
+  signInWithGoogle: async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`
+      }
+    })
+    return { data, error }
+  },
+
+  handleAuthCallback: async () => {
+    const { data, error } = await supabase.auth.getSession()
+    return { data, error }
+  }
+}
