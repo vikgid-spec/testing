@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fbatqlzufxrurjdalxga.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiYXRxbHp1ZnhydXJqZGFseGdhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NTgyNzcsImV4cCI6MjA3MzQzNDI3N30.3lnx9iUorYHl8GqiosaecPlGh-fP16P0xkVeOHM1TO8'
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
@@ -47,10 +47,8 @@ export const authHelpers = {
 
   signInWithGoogle: async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`
-      }
+      provider: 'google'
+      // Let Supabase use the Site URL from your dashboard
     })
     return { data, error }
   },
