@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fbatqlzufxrurjdalxga.supabase.co'
-
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
@@ -12,7 +11,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export const authHelpers = {
   signUp: async (email: string, password: string, name: string) => {
     const { data, error } = await supabase.auth.signUp({
-        console.log('Auth state change:', event, session)
       email,
       password,
       options: {
@@ -52,6 +50,11 @@ export const authHelpers = {
         redirectTo: `${window.location.origin}/`
       }
     })
+    return { data, error }
+  },
+
+  handleAuthCallback: async () => {
+    const { data, error } = await supabase.auth.getSession()
     return { data, error }
   }
 }
