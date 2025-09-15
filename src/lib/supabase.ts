@@ -46,3 +46,5 @@ export const authHelpers = {
   handleAuthCallback: async () => {
     const { data, error } = await supabase.auth.getSession()
     return { data, error }
+  }
+}
