@@ -1,11 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fbatqlzufxrurjdalxga.supabase.co'
-  },
-
-  handleAuthCallback: async () => {
-    const { data, error } = await supabase.auth.getSession()
-    return { data, error }
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
@@ -56,6 +52,11 @@ export const authHelpers = {
         redirectTo: `${window.location.origin}/`
       }
     })
+    return { data, error }
+  },
+
+  handleAuthCallback: async () => {
+    const { data, error } = await supabase.auth.getSession()
     return { data, error }
   }
 }
