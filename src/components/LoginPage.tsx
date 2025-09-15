@@ -38,16 +38,23 @@ function LoginPage({ onBack, onLoginSuccess, onGoToSignup }: LoginPageProps) {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     setError(null);
+    
+    console.log('Starting Google sign-in...');
+    console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+    console.log('Supabase Anon Key exists:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
 
     try {
       const { error } = await authHelpers.signInWithGoogle();
+      console.log('Google sign-in response:', { error });
       
       if (error) {
+        console.error('Google sign-in error details:', error);
         setError(`Google sign-in error: ${error.message}`);
         setGoogleLoading(false);
       }
       // If successful, the redirect will handle the rest
     } catch (err) {
+      console.error('Google sign-in catch block:', err);
       setError(`Connection error: Please check your internet connection and try again. ${err instanceof Error ? err.message : 'Unknown error'}`);
       setGoogleLoading(false);
     }
