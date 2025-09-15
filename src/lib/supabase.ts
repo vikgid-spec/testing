@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fbatqlzufxrurjdalxga.supabase.co'
-
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
@@ -44,11 +43,6 @@ export const authHelpers = {
     return supabase.auth.onAuthStateChange(callback)
   },
 
-  signInWithGoogle: async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google'
-      // Let Supabase use the Site URL from your dashboard
-    }
-    )
-  }
-}
+  handleAuthCallback: async () => {
+    const { data, error } = await supabase.auth.getSession()
+    return { data, error }

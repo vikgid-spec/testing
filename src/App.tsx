@@ -1,41 +1,48 @@
-import { createClient } from '@supabase/supabase-js'
+import React, { useState, useEffect } from 'react'
+import { authHelpers } from './lib/supabase'
+import LoginPage from './components/LoginPage'
+import SignupPage from './components/SignupPage'
+import Dashboard from './components/Dashboard'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fbatqlzufxrurjdalxga.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+export default function App() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [showSignup, setShowSignup] = useState(false)
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-
-// Auth helper functions
-export const auth = {
-  signIn: async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+  useEffect(() => {
+    // Check if user is already logged in
+    authHelpers.getCurrentUser().then(({ data: { user } }) => {
+      setUser(user)
+      setLoading(false)
     })
-    return { data, error }
-  },
 
-  signOut: async () => {
-    const { error } = await supabase.auth.signOut()
-    return { error }
-  },
-
-  getCurrentUser: () => {
-    return supabase.auth.getUser()
-  },
-
-  onAuthStateChange: (callback: (event: string, session: any) => void) => {
-    return supabase.auth.onAuthStateChange(callback)
-  },
-
-  signInWithGoogle: async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google'
-      // Let Supabase use the Site URL from your dashboard
+    // Listen for auth changes
+    const { data: { subscription } } = authHelpers.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
     })
-    return { data, error }
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
+
+  if (!user) {
+    return showSignup ? (
+      <SignupPage onSwitchToLogin={() => setShowSignup(false)} />
+    ) : (
+      <LoginPage onSwitchToSignup={() => setShowSignup(true)} />
+    )
+  }
+
+  return <Dashboard />
 }
