@@ -48,4 +48,7 @@ export const authHelpers = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google'
       // Let Supabase use the Site URL from your dashboard
+    }
+    )
+  }
 }
