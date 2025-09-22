@@ -17,6 +17,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   }
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const [newTask, setNewTask] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,21 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   // Load tasks when component mounts
   useEffect(() => {
     loadTasks();
+    loadUserProfile();
   }, []);
+
+  const loadUserProfile = async () => {
+    if (!user) return;
+    try {
+      const { profileHelpers } = await import('../lib/profiles');
+      const { data, error } = await profileHelpers.getProfile(user.id);
+      if (!error && data) {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    }
+  };
 
   const loadTasks = async () => {
     setTasksLoading(true);
@@ -258,10 +273,26 @@ function Dashboard({ onLogout, user }: DashboardProps) {
       <div className="relative z-10 w-full max-w-4xl mx-auto">
         {/* Dashboard card */}
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-6 md:p-8">
+          {/* Profile Photo Section */}
+          <div className="flex justify-center mb-6">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
+              {userProfile?.avatar_url ? (
+                <img
+                  src={userProfile.avatar_url}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-indigo-500">
+                  <User className="w-10 h-10 text-white" />
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* User info */}
           {user && (
             <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 rounded-lg">
-              <User size={24} className="text-blue-600" />
               <div className="flex-1">
                 <p className="font-semibold text-gray-800">
                   Welcome, {user.user_metadata?.full_name || user.email}!
