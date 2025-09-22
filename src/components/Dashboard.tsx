@@ -259,6 +259,20 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     setShowSearchResults(true);
     try {
       console.log('Searching for:', searchQuery.trim());
+      
+      // First, let's check if we have any tasks with embeddings
+      const { data: tasksCheck } = await taskHelpers.getTasks();
+      console.log('Total tasks:', tasksCheck?.length || 0);
+      
+      // Try to generate embeddings first if needed
+      try {
+        console.log('Attempting to generate embeddings...');
+        await embeddingHelpers.generateAllEmbeddings();
+        console.log('Embedding generation completed');
+      } catch (embError) {
+        console.warn('Embedding generation failed:', embError);
+      }
+      
       const results = await searchHelpers.smartSearch(searchQuery.trim(), user.id);
       console.log('Search results:', results);
       setSearchResults(results);

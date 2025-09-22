@@ -59,12 +59,6 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', userId)
       .not('embedding', 'is', null);
 
-    // Also check subtasks with embeddings
-    const { data: subtasksWithEmbeddings, error: subtaskCheckError } = await supabase
-      .from('subtasks')
-      .select('id, title, status, created_at, updated_at, parent_task_id')
-      .eq('user_id', userId)
-      .not('embedding', 'is', null);
 
     if (checkError) {
       console.error('Error checking for tasks with embeddings:', checkError);
@@ -77,21 +71,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (subtaskCheckError) {
-      console.error('Error checking for subtasks with embeddings:', subtaskCheckError);
-      return new Response(
-        JSON.stringify({ error: "Failed to check subtasks" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
     // If no tasks or subtasks have embeddings, return empty results
-    const totalWithEmbeddings = (tasksWithEmbeddings?.length || 0) + (subtasksWithEmbeddings?.length || 0);
+    const totalWithEmbeddings = tasksWithEmbeddings?.length || 0;
     if (totalWithEmbeddings === 0) {
-      console.log('No tasks or subtasks have embeddings yet');
+      console.log('No tasks have embeddings yet');
       return new Response(
         JSON.stringify({ tasks: [] }),
         {
@@ -101,7 +84,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log(`Found ${tasksWithEmbeddings?.length || 0} tasks and ${subtasksWithEmbeddings?.length || 0} subtasks with embeddings`);
+    console.log(`Found ${tasksWithEmbeddings?.length || 0} tasks with embeddings`);
 
     // Perform vector similarity search using SQL query instead of RPC
     const { data: tasks, error } = await supabase
@@ -110,11 +93,6 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', userId)
       .not('embedding', 'is', null);
 
-    const { data: subtasks, error: subtaskError } = await supabase
-      .from('subtasks')
-      .select('id, title, status, created_at, updated_at, embedding, parent_task_id')
-      .eq('user_id', userId)
-      .not('embedding', 'is', null);
 
     if (error) {
       console.error('Database error:', error);
@@ -127,16 +105,6 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    if (subtaskError) {
-      console.error('Database error for subtasks:', subtaskError);
-      return new Response(
-        JSON.stringify({ error: "Failed to search subtasks" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
 
     // Calculate similarity scores for tasks
     const tasksWithSimilarity = tasks
@@ -159,34 +127,10 @@ Deno.serve(async (req: Request) => {
         };
       })
       .filter(task => task !== null)
-      .filter(task => task.similarity >= 0.3); // Lower threshold for better results
-
-    // Calculate similarity scores for subtasks
-    const subtasksWithSimilarity = (subtasks || [])
-      .map(subtask => {
-        if (!subtask.embedding || !Array.isArray(subtask.embedding)) {
-          console.log(`Subtask ${subtask.id} has invalid embedding:`, subtask.embedding);
-          return null;
-        }
-        const similarity = calculateCosineSimilarity(queryEmbedding, subtask.embedding);
-        console.log(`Subtask "${subtask.title}" similarity: ${similarity}`);
-        return {
-          id: subtask.id,
-          title: subtask.title,
-          priority: 'medium', // Subtasks don't have priority, use default
-          status: subtask.status,
-          created_at: subtask.created_at,
-          updated_at: subtask.updated_at,
-          similarity: similarity,
-          type: 'subtask' as const,
-          parent_task_id: subtask.parent_task_id
-        };
-      })
-      .filter(subtask => subtask !== null)
-      .filter(subtask => subtask.similarity >= 0.3); // Lower threshold for better results
+      .filter(task => task.similarity >= 0.2); // Even lower threshold for testing
 
     // Combine and sort all results
-    const allResults = [...tasksWithSimilarity, ...subtasksWithSimilarity]
+    const allResults = tasksWithSimilarity
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, 10); // Return more results
 
