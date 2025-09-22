@@ -41,6 +41,18 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   useEffect(() => {
     loadTasks();
     loadUserProfile();
+    
+    // Generate embeddings for existing tasks if needed
+    const generateEmbeddings = async () => {
+      try {
+        await embeddingHelpers.generateAllEmbeddings();
+        console.log('Successfully generated embeddings for existing tasks');
+      } catch (error) {
+        console.warn('Failed to generate embeddings for existing tasks. This is optional and search will still work with basic text matching:', error);
+      }
+    };
+    
+    generateEmbeddings();
   }, []);
 
   const loadUserProfile = async () => {
@@ -246,7 +258,9 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     setIsSearching(true);
     setShowSearchResults(true);
     try {
+      console.log('Searching for:', searchQuery.trim());
       const results = await searchHelpers.smartSearch(searchQuery.trim(), user.id);
+      console.log('Search results:', results);
       setSearchResults(results);
     } catch (error) {
       console.error('Error performing smart search:', error);

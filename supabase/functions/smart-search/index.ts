@@ -91,6 +91,7 @@ Deno.serve(async (req: Request) => {
     // If no tasks or subtasks have embeddings, return empty results
     const totalWithEmbeddings = (tasksWithEmbeddings?.length || 0) + (subtasksWithEmbeddings?.length || 0);
     if (totalWithEmbeddings === 0) {
+      console.log('No tasks or subtasks have embeddings yet');
       return new Response(
         JSON.stringify({ tasks: [] }),
         {
@@ -99,6 +100,8 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
+
+    console.log(`Found ${tasksWithEmbeddings?.length || 0} tasks and ${subtasksWithEmbeddings?.length || 0} subtasks with embeddings`);
 
     // Perform vector similarity search using SQL query instead of RPC
     const { data: tasks, error } = await supabase
@@ -138,8 +141,13 @@ Deno.serve(async (req: Request) => {
     // Calculate similarity scores for tasks
     const tasksWithSimilarity = tasks
       .map(task => {
+        if (!task.embedding || !Array.isArray(task.embedding)) {
+          console.log(`Task ${task.id} has invalid embedding:`, task.embedding);
+          return null;
+        }
         // Calculate cosine similarity between query embedding and task embedding
         const similarity = calculateCosineSimilarity(queryEmbedding, task.embedding);
+        console.log(`Task "${task.title}" similarity: ${similarity}`);
         return {
           id: task.id,
           title: task.title,
@@ -150,12 +158,18 @@ Deno.serve(async (req: Request) => {
           similarity: similarity
         };
       })
-      .filter(task => task.similarity >= 0.7);
+      .filter(task => task !== null)
+      .filter(task => task.similarity >= 0.3); // Lower threshold for better results
 
     // Calculate similarity scores for subtasks
     const subtasksWithSimilarity = (subtasks || [])
       .map(subtask => {
+        if (!subtask.embedding || !Array.isArray(subtask.embedding)) {
+          console.log(`Subtask ${subtask.id} has invalid embedding:`, subtask.embedding);
+          return null;
+        }
         const similarity = calculateCosineSimilarity(queryEmbedding, subtask.embedding);
+        console.log(`Subtask "${subtask.title}" similarity: ${similarity}`);
         return {
           id: subtask.id,
           title: subtask.title,
@@ -168,12 +182,15 @@ Deno.serve(async (req: Request) => {
           parent_task_id: subtask.parent_task_id
         };
       })
-      .filter(subtask => subtask.similarity >= 0.7);
+      .filter(subtask => subtask !== null)
+      .filter(subtask => subtask.similarity >= 0.3); // Lower threshold for better results
 
     // Combine and sort all results
     const allResults = [...tasksWithSimilarity, ...subtasksWithSimilarity]
       .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 5);
+      .slice(0, 10); // Return more results
+
+    console.log(`Returning ${allResults.length} results`);
 
     return new Response(
       JSON.stringify({ tasks: allResults }),
