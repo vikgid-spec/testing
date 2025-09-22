@@ -4,6 +4,7 @@ import { authHelpers } from '../lib/supabase';
 import { taskHelpers, Task } from '../lib/tasks';
 import { subtaskHelpers, Subtask } from '../lib/subtasks';
 import { searchHelpers, SearchResult } from '../lib/search';
+import { embeddingHelpers } from '../lib/embeddings';
 import ProfilePage from './ProfilePage';
 
 interface DashboardProps {
@@ -40,6 +41,8 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   useEffect(() => {
     loadTasks();
     loadUserProfile();
+    // Generate embeddings for existing tasks on first load
+    generateEmbeddingsForExistingTasks();
   }, []);
 
   const loadUserProfile = async () => {
@@ -52,6 +55,14 @@ function Dashboard({ onLogout, user }: DashboardProps) {
       }
     } catch (error) {
       console.error('Error loading user profile:', error);
+    }
+  };
+
+  const generateEmbeddingsForExistingTasks = async () => {
+    try {
+      await embeddingHelpers.generateAllEmbeddings();
+    } catch (error) {
+      console.warn('Failed to generate embeddings for existing tasks:', error);
     }
   };
 
