@@ -275,6 +275,8 @@ function Dashboard({ onLogout, user }: DashboardProps) {
               >
                 <Settings size={20} />
               </button>
+            </div>
+          )}
           
           {/* Heading */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
