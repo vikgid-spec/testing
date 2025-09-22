@@ -26,6 +26,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   const [generatingSubtasks, setGeneratingSubtasks] = useState<string | null>(null);
   const [suggestedSubtasks, setSuggestedSubtasks] = useState<Record<string, string[]>>({});
   const [savingSubtask, setSavingSubtask] = useState<string | null>(null);
+  const [hasGeneratedSubtasks, setHasGeneratedSubtasks] = useState<Set<string>>(new Set());
 
   // Load tasks when component mounts
   useEffect(() => {
@@ -152,6 +153,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
 
   const handleGenerateSubtasks = async (taskId: string, taskTitle: string) => {
     setGeneratingSubtasks(taskId);
+    setHasGeneratedSubtasks(prev => new Set([...prev, taskId]));
     try {
       const suggestions = await subtaskHelpers.generateSubtasks(taskTitle);
       setSuggestedSubtasks(prev => ({ ...prev, [taskId]: suggestions }));
@@ -426,14 +428,16 @@ function Dashboard({ onLogout, user }: DashboardProps) {
                       )}
                       
                       {/* Generate subtasks button */}
-                      <button
-                        onClick={() => handleGenerateSubtasks(task.id, task.title)}
-                        disabled={generatingSubtasks === task.id}
-                        className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Sparkles size={14} />
-                        {generatingSubtasks === task.id ? 'Generating...' : 'Generate Subtasks with AI'}
-                      </button>
+                      {!hasGeneratedSubtasks.has(task.id) && (
+                        <button
+                          onClick={() => handleGenerateSubtasks(task.id, task.title)}
+                          disabled={generatingSubtasks === task.id}
+                          className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <Sparkles size={14} />
+                          {generatingSubtasks === task.id ? 'Generating...' : 'Generate Subtasks with AI'}
+                        </button>
+                      )}
                       
                       {/* Suggested subtasks */}
                       {suggestedSubtasks[task.id] && suggestedSubtasks[task.id].length > 0 && (
