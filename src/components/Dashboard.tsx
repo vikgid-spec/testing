@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X } from 'lucide-react';
+import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X, Sparkles, Save } from 'lucide-react';
 import { authHelpers } from '../lib/supabase';
 import { taskHelpers, Task } from '../lib/tasks';
+import { subtaskHelpers, Subtask } from '../lib/subtasks';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -21,6 +22,10 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [editingTask, setEditingTask] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [subtasks, setSubtasks] = useState<Record<string, Subtask[]>>({});
+  const [generatingSubtasks, setGeneratingSubtasks] = useState<string | null>(null);
+  const [suggestedSubtasks, setSuggestedSubtasks] = useState<Record<string, string[]>>({});
+  const [savingSubtask, setSavingSubtask] = useState<string | null>(null);
 
   // Load tasks when component mounts
   useEffect(() => {
@@ -43,6 +48,19 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     }
   };
 
+  const loadSubtasks = async (taskId: string) => {
+    try {
+      const { data, error } = await subtaskHelpers.getSubtasks(taskId);
+      if (error) {
+        console.error('Error loading subtasks:', error);
+      } else {
+        setSubtasks(prev => ({ ...prev, [taskId]: data || [] }));
+      }
+    } catch (error) {
+      console.error('Error loading subtasks:', error);
+    }
+  };
+
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTask.trim()) return;
@@ -56,6 +74,8 @@ function Dashboard({ onLogout, user }: DashboardProps) {
         setTasks([data, ...tasks]);
         setNewTask('');
         setNewTaskPriority('medium');
+        // Load subtasks for the new task
+        loadSubtasks(data.id);
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -130,6 +150,69 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     setEditingTitle('');
   };
 
+  const handleGenerateSubtasks = async (taskId: string, taskTitle: string) => {
+    setGeneratingSubtasks(taskId);
+    try {
+      const suggestions = await subtaskHelpers.generateSubtasks(taskTitle);
+      setSuggestedSubtasks(prev => ({ ...prev, [taskId]: suggestions }));
+    } catch (error) {
+      console.error('Error generating subtasks:', error);
+      // You could add a toast notification here
+    } finally {
+      setGeneratingSubtasks(null);
+    }
+  };
+
+  const handleSaveSubtask = async (taskId: string, subtaskTitle: string, suggestionIndex: number) => {
+    setSavingSubtask(`${taskId}-${suggestionIndex}`);
+    try {
+      const { data, error } = await subtaskHelpers.createSubtask(subtaskTitle, taskId, user.id);
+      if (error) {
+        console.error('Error saving subtask:', error);
+      } else if (data) {
+        // Update local subtasks state
+        setSubtasks(prev => ({
+          ...prev,
+          [taskId]: [...(prev[taskId] || []), data]
+        }));
+        
+        // Remove the suggestion from the list
+        setSuggestedSubtasks(prev => ({
+          ...prev,
+          [taskId]: prev[taskId]?.filter((_, index) => index !== suggestionIndex) || []
+        }));
+      }
+    } catch (error) {
+      console.error('Error saving subtask:', error);
+    } finally {
+      setSavingSubtask(null);
+    }
+  };
+
+  const handleSubtaskStatusChange = async (subtaskId: string, taskId: string, newStatus: 'pending' | 'in-progress' | 'done') => {
+    try {
+      const { data, error } = await subtaskHelpers.updateSubtaskStatus(subtaskId, newStatus);
+      if (error) {
+        console.error('Error updating subtask status:', error);
+      } else if (data) {
+        setSubtasks(prev => ({
+          ...prev,
+          [taskId]: prev[taskId]?.map(subtask => subtask.id === subtaskId ? data : subtask) || []
+        }));
+      }
+    } catch (error) {
+      console.error('Error updating subtask status:', error);
+    }
+  };
+
+  // Load subtasks for all tasks when tasks are loaded
+  useEffect(() => {
+    tasks.forEach(task => {
+      if (!subtasks[task.id]) {
+        loadSubtasks(task.id);
+      }
+    });
+  }, [tasks]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -313,6 +396,66 @@ function Dashboard({ onLogout, user }: DashboardProps) {
                           <Trash2 size={16} />
                         </button>
                       </div>
+                    </div>
+                    
+                    {/* Subtasks section */}
+                    <div className="mt-4 pl-4 border-l-2 border-gray-100">
+                      {/* Existing subtasks */}
+                      {subtasks[task.id] && subtasks[task.id].length > 0 && (
+                        <div className="mb-3">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Subtasks:</h4>
+                          <div className="space-y-2">
+                            {subtasks[task.id].map((subtask) => (
+                              <div key={subtask.id} className="flex items-center gap-2 text-sm">
+                                <select
+                                  value={subtask.status}
+                                  onChange={(e) => handleSubtaskStatusChange(subtask.id, task.id, e.target.value as 'pending' | 'in-progress' | 'done')}
+                                  className={`px-2 py-1 text-xs font-medium border rounded ${getStatusColor(subtask.status)}`}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="in-progress">In Progress</option>
+                                  <option value="done">Done</option>
+                                </select>
+                                <span className={`flex-1 ${subtask.status === 'done' ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+                                  {subtask.title}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Generate subtasks button */}
+                      <button
+                        onClick={() => handleGenerateSubtasks(task.id, task.title)}
+                        disabled={generatingSubtasks === task.id}
+                        className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Sparkles size={14} />
+                        {generatingSubtasks === task.id ? 'Generating...' : 'Generate Subtasks with AI'}
+                      </button>
+                      
+                      {/* Suggested subtasks */}
+                      {suggestedSubtasks[task.id] && suggestedSubtasks[task.id].length > 0 && (
+                        <div className="mt-3">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Suggested Subtasks:</h4>
+                          <div className="space-y-2">
+                            {suggestedSubtasks[task.id].map((suggestion, index) => (
+                              <div key={index} className="flex items-center justify-between gap-2 p-2 bg-gray-50 rounded border">
+                                <span className="text-sm text-gray-700 flex-1">{suggestion}</span>
+                                <button
+                                  onClick={() => handleSaveSubtask(task.id, suggestion, index)}
+                                  disabled={savingSubtask === `${task.id}-${index}`}
+                                  className="flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  <Save size={12} />
+                                  {savingSubtask === `${task.id}-${index}` ? 'Saving...' : 'Save'}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
