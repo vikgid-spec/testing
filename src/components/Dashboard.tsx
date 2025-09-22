@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X, Sparkles, Save } from 'lucide-react';
+import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X, Sparkles, Save, Settings } from 'lucide-react';
 import { authHelpers } from '../lib/supabase';
 import { taskHelpers, Task } from '../lib/tasks';
 import { subtaskHelpers, Subtask } from '../lib/subtasks';
+import ProfilePage from './ProfilePage';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -27,6 +28,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   const [suggestedSubtasks, setSuggestedSubtasks] = useState<Record<string, string[]>>({});
   const [savingSubtask, setSavingSubtask] = useState<string | null>(null);
   const [hasGeneratedSubtasks, setHasGeneratedSubtasks] = useState<Set<string>>(new Set());
+  const [showProfile, setShowProfile] = useState(false);
 
   // Load tasks when component mounts
   useEffect(() => {
@@ -234,6 +236,10 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     }
   };
 
+  if (showProfile) {
+    return <ProfilePage user={user} onBack={() => setShowProfile(false)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-white flex items-center justify-center px-4 py-8 font-['Open_Sans']">
       {/* Animated gradient overlay */}
@@ -256,14 +262,19 @@ function Dashboard({ onLogout, user }: DashboardProps) {
           {user && (
             <div className="flex items-center gap-3 mb-6 p-4 bg-blue-50 rounded-lg">
               <User size={24} className="text-blue-600" />
-              <div>
+              <div className="flex-1">
                 <p className="font-semibold text-gray-800">
                   Welcome, {user.user_metadata?.full_name || user.email}!
                 </p>
                 <p className="text-sm text-gray-600">{user.email}</p>
               </div>
-            </div>
-          )}
+              <button
+                onClick={() => setShowProfile(true)}
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                title="View Profile"
+              >
+                <Settings size={20} />
+              </button>
           
           {/* Heading */}
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
