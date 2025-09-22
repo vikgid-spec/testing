@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { authHelpers } from '../lib/supabase';
 import { LogIn, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginPageProps {
@@ -10,15 +11,24 @@ export default function LoginPage({ onSwitchToSignup }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // TODO: Implement login logic
-    console.log('Login attempt:', { email, password });
-    
-    setIsLoading(false);
+    try {
+      const { error } = await authHelpers.signIn(email, password);
+      if (error) {
+        setError(error.message);
+      }
+      // If successful, the auth state change will be handled by App.tsx
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -31,6 +41,12 @@ export default function LoginPage({ onSwitchToSignup }: LoginPageProps) {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h1>
           <p className="text-gray-600">Sign in to your account</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
