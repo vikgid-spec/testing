@@ -20,6 +20,22 @@ export const authHelpers = {
         }
       }
     })
+    
+    // Create profile entry if user was successfully created
+    if (data.user && !error) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          full_name: name,
+          avatar_url: null
+        })
+      
+      if (profileError) {
+        console.error('Error creating profile:', profileError)
+      }
+    }
+    
     return { data, error }
   },
 

@@ -1,8 +1,31 @@
-import { supabase } from './supabase';
+  let { data, error } = await supabase
 
 export interface Profile {
   id: string;
   full_name: string | null;
+  
+  // If profile doesn't exist, create it
+  if (error && error.code === 'PGRST116') {
+    const { data: user } = await supabase.auth.getUser()
+    if (user.user) {
+      const { data: newProfile, error: createError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          full_name: user.user.user_metadata?.full_name || '',
+          avatar_url: null
+        })
+        .select()
+        .single()
+      
+      if (createError) {
+        return { data: null, error: createError }
+      }
+      
+      data = newProfile
+      error = null
+    }
+  }
   avatar_url: string | null;
   updated_at: string;
 }
