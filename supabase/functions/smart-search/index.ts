@@ -59,6 +59,13 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', userId)
       .not('embedding', 'is', null);
 
+    // Also check subtasks with embeddings
+    const { data: subtasksWithEmbeddings, error: subtaskCheckError } = await supabase
+      .from('subtasks')
+      .select('id, title, status, created_at, updated_at, parent_task_id')
+      .eq('user_id', userId)
+      .not('embedding', 'is', null);
+
     if (checkError) {
       console.error('Error checking for tasks with embeddings:', checkError);
       return new Response(
@@ -70,8 +77,20 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // If no tasks have embeddings, return empty results
-    if (!tasksWithEmbeddings || tasksWithEmbeddings.length === 0) {
+    if (subtaskCheckError) {
+      console.error('Error checking for subtasks with embeddings:', subtaskCheckError);
+      return new Response(
+        JSON.stringify({ error: "Failed to check subtasks" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // If no tasks or subtasks have embeddings, return empty results
+    const totalWithEmbeddings = (tasksWithEmbeddings?.length || 0) + (subtasksWithEmbeddings?.length || 0);
+    if (totalWithEmbeddings === 0) {
       return new Response(
         JSON.stringify({ tasks: [] }),
         {
@@ -88,6 +107,12 @@ Deno.serve(async (req: Request) => {
       .eq('user_id', userId)
       .not('embedding', 'is', null);
 
+    const { data: subtasks, error: subtaskError } = await supabase
+      .from('subtasks')
+      .select('id, title, status, created_at, updated_at, embedding, parent_task_id')
+      .eq('user_id', userId)
+      .not('embedding', 'is', null);
+
     if (error) {
       console.error('Database error:', error);
       return new Response(
@@ -99,7 +124,18 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Calculate similarity scores manually and filter
+    if (subtaskError) {
+      console.error('Database error for subtasks:', subtaskError);
+      return new Response(
+        JSON.stringify({ error: "Failed to search subtasks" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Calculate similarity scores for tasks
     const tasksWithSimilarity = tasks
       .map(task => {
         // Calculate cosine similarity between query embedding and task embedding
@@ -114,12 +150,33 @@ Deno.serve(async (req: Request) => {
           similarity: similarity
         };
       })
-      .filter(task => task.similarity >= 0.7)
+      .filter(task => task.similarity >= 0.7);
+
+    // Calculate similarity scores for subtasks
+    const subtasksWithSimilarity = (subtasks || [])
+      .map(subtask => {
+        const similarity = calculateCosineSimilarity(queryEmbedding, subtask.embedding);
+        return {
+          id: subtask.id,
+          title: subtask.title,
+          priority: 'medium', // Subtasks don't have priority, use default
+          status: subtask.status,
+          created_at: subtask.created_at,
+          updated_at: subtask.updated_at,
+          similarity: similarity,
+          type: 'subtask' as const,
+          parent_task_id: subtask.parent_task_id
+        };
+      })
+      .filter(subtask => subtask.similarity >= 0.7);
+
+    // Combine and sort all results
+    const allResults = [...tasksWithSimilarity, ...subtasksWithSimilarity]
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, 5);
 
     return new Response(
-      JSON.stringify({ tasks: tasksWithSimilarity }),
+      JSON.stringify({ tasks: allResults }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

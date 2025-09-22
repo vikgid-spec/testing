@@ -412,7 +412,14 @@ function Dashboard({ onLogout, user }: DashboardProps) {
                       <div key={result.id} className="bg-white border border-blue-200 rounded-lg p-4 shadow-sm">
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-base font-medium text-gray-800 truncate">{result.title}</h4>
+                            <h4 className="text-base font-medium text-gray-800 truncate">
+                              {result.title}
+                              {(result as any).type === 'subtask' && (
+                                <span className="ml-2 text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                                  subtask
+                                </span>
+                              )}
+                            </h4>
                             <div className="flex items-center gap-2 mt-1">
                               <span className={`px-2 py-1 text-xs font-medium border rounded-full ${getPriorityColor(result.priority)}`}>
                                 {result.priority}
