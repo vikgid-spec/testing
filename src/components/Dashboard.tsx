@@ -41,8 +41,6 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   useEffect(() => {
     loadTasks();
     loadUserProfile();
-    // Generate embeddings for existing tasks on first load
-    generateEmbeddingsForExistingTasks();
   }, []);
 
   const loadUserProfile = async () => {
@@ -61,8 +59,9 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   const generateEmbeddingsForExistingTasks = async () => {
     try {
       await embeddingHelpers.generateAllEmbeddings();
+      console.log('Successfully generated embeddings for existing tasks');
     } catch (error) {
-      console.warn('Failed to generate embeddings for existing tasks:', error);
+      console.warn('Failed to generate embeddings for existing tasks. This is optional and search will still work with basic text matching:', error);
     }
   };
 

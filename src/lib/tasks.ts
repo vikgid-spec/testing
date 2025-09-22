@@ -23,33 +23,6 @@ export const taskHelpers = {
 
   // Create a new task
   createTask: async (title: string, userId: string, priority: 'low' | 'medium' | 'high' = 'medium') => {
-    // Generate embedding for the task title
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    let embedding = null;
-    let contentHash = null;
-    
-    try {
-      // Generate embedding using edge function
-      const response = await fetch(`${supabaseUrl}/functions/v1/generate-embeddings`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ taskTitle: title }),
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        embedding = data.embedding;
-        contentHash = data.contentHash;
-      }
-    } catch (error) {
-      console.warn('Failed to generate embedding for new task:', error);
-    }
-
     const { data, error } = await supabase
       .from('tasks')
       .insert([
@@ -58,8 +31,6 @@ export const taskHelpers = {
           priority,
           status: 'pending',
           user_id: userId,
-          embedding,
-          content_hash: contentHash
         }
       ])
       .select()
