@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X, Sparkles, Save, Settings } from 'lucide-react';
+import { ArrowLeft, User, Plus, Trash2, Edit3, Check, X, Sparkles, Save, Settings, Search } from 'lucide-react';
 import { authHelpers } from '../lib/supabase';
 import { taskHelpers, Task } from '../lib/tasks';
 import { subtaskHelpers, Subtask } from '../lib/subtasks';
+import { searchHelpers, SearchResult } from '../lib/search';
 import ProfilePage from './ProfilePage';
 
 interface DashboardProps {
@@ -30,6 +31,10 @@ function Dashboard({ onLogout, user }: DashboardProps) {
   const [savingSubtask, setSavingSubtask] = useState<string | null>(null);
   const [hasGeneratedSubtasks, setHasGeneratedSubtasks] = useState<Set<string>>(new Set());
   const [showProfile, setShowProfile] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Load tasks when component mounts
   useEffect(() => {
@@ -224,6 +229,29 @@ function Dashboard({ onLogout, user }: DashboardProps) {
     }
   };
 
+  const handleSmartSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setShowSearchResults(true);
+    try {
+      const results = await searchHelpers.smartSearch(searchQuery.trim(), user.id);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error performing smart search:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowSearchResults(false);
+  };
+
   // Load subtasks for all tasks when tasks are loaded
   useEffect(() => {
     tasks.forEach(task => {
@@ -313,6 +341,88 @@ function Dashboard({ onLogout, user }: DashboardProps) {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-8 text-center">
             Your Tasks
           </h1>
+          
+          {/* Smart Search Section */}
+          <div className="mb-8 p-6 bg-blue-50 rounded-lg border border-blue-100">
+            <form onSubmit={handleSmartSearch} className="mb-4">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex-1">
+                  <label htmlFor="smartSearch" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Smart Search
+                  </label>
+                  <input
+                    type="text"
+                    id="smartSearch"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-blue-200 rounded-lg focus:border-blue-500 focus:outline-none transition-colors duration-200 text-gray-800 placeholder-gray-500"
+                    placeholder="Search your tasks using natural language..."
+                    disabled={isSearching}
+                  />
+                </div>
+                <div className="flex gap-2 sm:flex-col sm:justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSearching || !searchQuery.trim()}
+                    className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+                  >
+                    <Search size={18} />
+                    {isSearching ? 'Searching...' : 'Search'}
+                  </button>
+                  {showSearchResults && (
+                    <button
+                      type="button"
+                      onClick={clearSearch}
+                      className="px-4 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors duration-200"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+            
+            {/* Search Results */}
+            {showSearchResults && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  Search Results {searchResults.length > 0 && `(${searchResults.length})`}
+                </h3>
+                {isSearching ? (
+                  <div className="text-center py-4">
+                    <div className="text-gray-600">Searching your tasks...</div>
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="text-center py-4">
+                    <div className="text-gray-600">No similar tasks found above 70% similarity threshold.</div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {searchResults.map((result) => (
+                      <div key={result.id} className="bg-white border border-blue-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-base font-medium text-gray-800 truncate">{result.title}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`px-2 py-1 text-xs font-medium border rounded-full ${getPriorityColor(result.priority)}`}>
+                                {result.priority}
+                              </span>
+                              <span className={`px-2 py-1 text-xs font-medium border rounded-full ${getStatusColor(result.status)}`}>
+                                {result.status}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {Math.round(result.similarity * 100)}% match
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           
           {/* Add new task form */}
           <form onSubmit={handleAddTask} className="mb-8 p-6 bg-gray-50 rounded-lg">
