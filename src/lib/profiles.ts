@@ -10,14 +10,17 @@ export interface Profile {
 export const profileHelpers = {
   // Get user profile
   getProfile: async (userId: string) => {
-    let { data, error } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', userId)
-      .single();
+      .eq('id', userId);
     
-    // If profile doesn't exist, create it
-    if (error && error.code === 'PGRST116') {
+    if (error) {
+      return { data: null, error };
+    }
+    
+    // If profile doesn't exist (empty array), create it
+    if (!data || data.length === 0) {
       const { data: user } = await supabase.auth.getUser()
       if (user.user) {
         const { data: newProfile, error: createError } = await supabase
@@ -34,12 +37,12 @@ export const profileHelpers = {
           return { data: null, error: createError }
         }
         
-        data = newProfile
-        error = null
+        return { data: newProfile, error: null }
       }
     }
     
-    return { data, error };
+    // Return the first (and should be only) profile
+    return { data: data[0], error: null };
   },
 
   // Update user profile
