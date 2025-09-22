@@ -36,6 +36,27 @@ export const taskHelpers = {
       .select()
       .single();
     
+    // Generate embedding for the new task
+    if (data && !error) {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fbatqlzufxrurjdalxga.supabase.co';
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        if (supabaseAnonKey) {
+          await fetch(`${supabaseUrl}/functions/v1/generate-task-embedding`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseAnonKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ taskId: data.id, title }),
+          });
+        }
+      } catch (embeddingError) {
+        console.warn('Failed to generate embedding for new task:', embeddingError);
+      }
+    }
+    
     return { data, error };
   },
 
