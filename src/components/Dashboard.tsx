@@ -432,7 +432,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
                   </div>
                 ) : searchResults.length === 0 ? (
                   <div className="text-center py-4">
-                    <div className="text-gray-600">No similar tasks found above 70% similarity threshold.</div>
+                    <div className="text-gray-600">No similar tasks found. Try different keywords or create some tasks first.</div>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -456,7 +456,7 @@ function Dashboard({ onLogout, user }: DashboardProps) {
                                 {result.status}
                               </span>
                               <span className="text-xs text-gray-500">
-                                {Math.round(result.similarity * 100)}% match
+                                {(result.similarity * 100).toFixed(1)}% match
                               </span>
                             </div>
                           </div>

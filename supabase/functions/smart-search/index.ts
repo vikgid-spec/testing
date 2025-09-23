@@ -127,14 +127,15 @@ Deno.serve(async (req: Request) => {
         };
       })
       .filter(task => task !== null)
-      .filter(task => task.similarity >= 0.2); // Even lower threshold for testing
+      .filter(task => task.similarity >= 0.15); // Lower threshold to catch more results
 
     // Combine and sort all results
     const allResults = tasksWithSimilarity
       .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 10); // Return more results
+      .slice(0, 20); // Return more results
 
-    console.log(`Returning ${allResults.length} results`);
+    console.log(`Returning ${allResults.length} results with similarities:`, 
+      allResults.map(r => `"${r.title}": ${(r.similarity * 100).toFixed(1)}%`));
 
     return new Response(
       JSON.stringify({ tasks: allResults }),
